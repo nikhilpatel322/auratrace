@@ -88,35 +88,24 @@ export default function DocumentationPage() {
           {/* Quickstart Code */}
           <div className="space-y-2">
             <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 font-heading">
-              2. Basic Initialization
+              2. Automatic Setup &amp; Initialization
             </h3>
             <div className="rounded-xl border border-slate-800 bg-slate-950 p-4 text-xs font-mono text-slate-300 overflow-x-auto">
-              <pre>{`from auratrace import AuraClient
+              <pre>{`import auratrace
 
-client = AuraClient(
-    project_id="00000000-0000-0000-0000-000000000001",
+# Option A: Automatic Zero-Config Detection
+# Importing auratrace automatically installs sys.excepthook, detects runtime
+# metadata, and buffers crash telemetry in the background.
+
+# Option B: Explicit Configuration (or via AURATRACE_API_KEY environment variable)
+client = auratrace.init(
     api_key="YOUR_PROJECT_API_KEY",
     service_name="payment-service",
     endpoint="http://localhost:8000"
 )
 
-# Starts automatic telemetry worker and registers sys.excepthook
-client.start()`}</pre>
-            </div>
-          </div>
-
-          {/* FastAPI Middleware Example */}
-          <div className="space-y-2">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 font-heading">
-              3. FastAPI / ASGI Middleware
-            </h3>
-            <div className="rounded-xl border border-slate-800 bg-slate-950 p-4 text-xs font-mono text-slate-300 overflow-x-auto">
-              <pre>{`from fastapi import FastAPI
-from auratrace.hooks import instrument_fastapi
-
-app = FastAPI()
-client = AuraClient(service_name="order-api")
-instrument_fastapi(app, client)`}</pre>
+# Optional manual telemetry dispatch
+auratrace.capture_message("Order processed", metadata={"order_id": "ord_101"})`}</pre>
             </div>
           </div>
         </section>
@@ -162,19 +151,24 @@ instrument_fastapi(app, client)`}</pre>
           {/* Quickstart Code */}
           <div className="space-y-2">
             <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 font-heading">
-              2. Basic Initialization
+              2. Automatic Setup &amp; Initialization
             </h3>
             <div className="rounded-xl border border-slate-800 bg-slate-950 p-4 text-xs font-mono text-slate-300 overflow-x-auto">
-              <pre>{`import { initAuraTrace } from "@auratrace/node";
+              <pre>{`// Option A: Zero-Boilerplate Import
+import "@auratrace/node";
+// Automatically registers uncaughtException and unhandledRejection hooks!
 
-const aura = initAuraTrace({
-  projectId: "00000000-0000-0000-0000-000000000001",
+// Option B: Explicit Configuration (or via AURATRACE_API_KEY environment variable)
+import { init, captureMessage, captureException } from "@auratrace/node";
+
+const client = init({
   apiKey: "YOUR_PROJECT_API_KEY",
   serviceName: "auth-service",
   endpoint: "http://localhost:8000"
 });
 
-// Automatic process uncaughtException and unhandledRejection interceptors active!`}</pre>
+// Optional manual telemetry dispatch
+captureMessage("User logged in", { userId: "usr_456" });`}</pre>
             </div>
           </div>
         </section>

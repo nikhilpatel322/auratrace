@@ -47,12 +47,16 @@ _load_env()
 
 BASE_URL = os.getenv("AURA_API_URL", "http://127.0.0.1:8000")
 MASTER_KEY = os.getenv("AURA_MASTER_API_KEY")
+RUN_E2E = os.getenv("RUN_E2E", "0").lower() in ("1", "true", "yes")
 
-if not MASTER_KEY:
-    raise RuntimeError(
-        "AURA_MASTER_API_KEY is required for acceptance verification. "
-        "Please configure it in your environment or .env file."
+try:
+    import pytest
+    pytestmark = pytest.mark.skipif(
+        not RUN_E2E or not MASTER_KEY,
+        reason="Live end-to-end acceptance verification requires RUN_E2E=1 and AURA_MASTER_API_KEY with a running backend cluster."
     )
+except ImportError:
+    pass
 
 def request(path, method="GET", data=None, headers=None):
     url = f"{BASE_URL}{path}"
@@ -84,6 +88,11 @@ def banner(title):
     print("=" * 70)
 
 def main():
+    if not MASTER_KEY:
+        print("\n❌ [Configuration Error] AURA_MASTER_API_KEY is required for acceptance verification.")
+        print("   Please configure it in your environment or .env file before running this test.\n")
+        sys.exit(1)
+
     banner("AURATRACE END-TO-END ACCEPTANCE VERIFICATION")
 
     # Step 1: Check System Health
@@ -223,6 +232,10 @@ def main():
         print(f"  (Note: Docker database verification skipped: {exc})")
 
     banner("✅ ALL ACCEPTANCE CRITERIA VERIFIED SUCCESSFULLY!")
+
+def test_e2e_acceptance_flow():
+    """Pytest test entrypoint for live end-to-end acceptance verification."""
+    main()
 
 if __name__ == "__main__":
     main()

@@ -20,6 +20,9 @@ from .metadata import (
     resolve_service_name,
 )
 from .transport import HTTPTransport
+from .engine import EmbeddedDiagnosticEngine, DiagnosticReport
+from .safety import inspect_patch, PatchSafetyResult
+from .sandbox import run_sandbox_test
 
 _default_client: Optional[AuraTrace] = None
 
@@ -33,6 +36,7 @@ def init(
     batch_size: int = 50,
     flush_interval_seconds: float = 1.0,
     install_global_hook: bool = True,
+    enable_local_diagnosis: bool = True,
 ) -> AuraTrace:
     """Manually configure or override AuraTrace client instance."""
     global _default_client
@@ -45,6 +49,7 @@ def init(
         batch_size=batch_size,
         flush_interval_seconds=flush_interval_seconds,
         install_global_hook=install_global_hook,
+        enable_local_diagnosis=enable_local_diagnosis,
     )
     return _default_client
 
@@ -63,9 +68,16 @@ def capture_message(message: str, metadata: Optional[dict] = None) -> None:
 
 def capture_exception(
     exception: BaseException, metadata: Optional[dict] = None
-) -> None:
-    """Capture and send an exception trace to AuraTrace."""
-    _get_or_create_client().capture_exception(exception, metadata=metadata)
+) -> Optional[DiagnosticReport]:
+    """Capture and diagnose an exception trace with AuraTrace."""
+    return _get_or_create_client().capture_exception(exception, metadata=metadata)
+
+
+def diagnose(
+    exception: BaseException, auto_sandbox: bool = False
+) -> Optional[DiagnosticReport]:
+    """Run embedded crash diagnosis, RAG search, and Safety Gate verification."""
+    return _get_or_create_client().diagnose(exception, auto_sandbox=auto_sandbox)
 
 
 def flush() -> None:
@@ -89,8 +101,14 @@ __all__ = [
     "init",
     "capture_message",
     "capture_exception",
+    "diagnose",
     "flush",
     "HTTPTransport",
+    "EmbeddedDiagnosticEngine",
+    "DiagnosticReport",
+    "inspect_patch",
+    "PatchSafetyResult",
+    "run_sandbox_test",
     "install_exception_hook",
     "uninstall_exception_hook",
 ]

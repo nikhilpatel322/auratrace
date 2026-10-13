@@ -15,6 +15,7 @@ from .metadata import (
     resolve_service_name,
 )
 from .transport import HTTPTransport
+from .engine import EmbeddedDiagnosticEngine, DiagnosticReport
 
 
 class AuraTrace:
@@ -30,6 +31,7 @@ class AuraTrace:
         batch_size: int = 50,
         flush_interval_seconds: float = 1.0,
         install_global_hook: bool = True,
+        enable_local_diagnosis: bool = True,
     ):
         self.api_key = resolve_api_key(api_key)
         self.service_name = resolve_service_name(service_name)
@@ -37,6 +39,13 @@ class AuraTrace:
         self.environment = resolve_environment(environment)
         self.version = version or "1.0.0"
         self.runtime_info = get_runtime_info()
+        self.enable_local_diagnosis = enable_local_diagnosis
+
+        self.engine = (
+            EmbeddedDiagnosticEngine(service_name=self.service_name)
+            if self.enable_local_diagnosis
+            else None
+        )
 
         self.transport = HTTPTransport(
             endpoint=self.endpoint,
@@ -99,7 +108,32 @@ class AuraTrace:
                 **self.runtime_info,
             },
         }
+
+        # Embedded Autonomous Diagnostics (Zero Backend Mode)
+        report: Optional[DiagnosticReport] = None
+        if self.engine is not None:
+            try:
+                report = self.engine.evaluate_crash(
+                    exception=exception,
+                    stack_trace=stack_trace,
+                    context_metadata=metadata,
+                )
+                event["metadata"]["diagnostic_report"] = report.to_dict()
+            except Exception:
+                pass
+
         self.transport.enqueue(event)
+        return report
+
+    def diagnose(
+        self,
+        exception: BaseException,
+        auto_sandbox: bool = False,
+    ) -> Optional[DiagnosticReport]:
+        """Manually trigger local AI doctor diagnosis and Safety Gate inspection."""
+        if self.engine is None:
+            self.engine = EmbeddedDiagnosticEngine(service_name=self.service_name)
+        return self.engine.evaluate_crash(exception, auto_sandbox=auto_sandbox)
 
     def flush(self, timeout: float = 2.0) -> None:
         """Flush all pending telemetry events synchronously."""

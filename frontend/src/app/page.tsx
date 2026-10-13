@@ -185,7 +185,7 @@ const client = initAuraTrace({
                 SDK Adoption &amp; Telemetry
               </span>
               <h2 className="text-xl font-bold text-slate-900 font-heading mt-1">
-                Real-Time SDK Usage Statistics
+                Telemetry &amp; Benchmark Metrics <span className="text-xs font-normal text-slate-400 block sm:inline sm:ml-2">(Demo Simulation)</span>
               </h2>
             </div>
 

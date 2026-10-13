@@ -61,8 +61,8 @@ export default function ProjectPage() {
                 SDK Usage
               </h2>
             </div>
-            <span className="rounded-full bg-emerald-50 border border-emerald-200 px-3 py-1 text-[11px] font-bold text-emerald-700 font-heading">
-              Active Telemetry
+            <span className="rounded-full bg-blue-50 border border-blue-200 px-3 py-1 text-[11px] font-bold text-blue-700 font-heading">
+              Demo Simulation Metrics
             </span>
           </div>
 

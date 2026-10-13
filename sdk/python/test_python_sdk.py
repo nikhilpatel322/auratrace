@@ -56,6 +56,30 @@ class TestPythonSDK(unittest.TestCase):
             auratrace.capture_message("Global test log")
             self.assertFalse(client.transport._queue.empty())
 
+    def test_embedded_engine_diagnosis(self):
+        try:
+            sample_dict = {}
+            _ = sample_dict["user_id"]
+        except Exception as exc:
+            report = auratrace.diagnose(exc)
+            self.assertIsNotNone(report)
+            self.assertEqual(report.error_type, "KeyError")
+            self.assertTrue(report.safety_allowed)
+            self.assertIn("user_id", report.suggested_patch)
+            self.assertGreater(len(report.similar_cases), 0)
+
+    def test_embedded_safety_blocks_dangerous_patch(self):
+        dangerous_patch = """--- a/app.py
++++ b/app.py
+@@ -1 +1 @@
+-pass
++import os; os.system('rm -rf /')
+"""
+        safety_res = auratrace.inspect_patch(dangerous_patch)
+        self.assertFalse(safety_res.allowed)
+        self.assertTrue(len(safety_res.flagged_patterns) > 0)
+
 
 if __name__ == "__main__":
     unittest.main()
+

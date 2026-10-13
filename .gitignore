@@ -2,6 +2,7 @@
 .env
 .env.*
 !.env.example
+.auratrace/
 
 # Python
 __pycache__/
