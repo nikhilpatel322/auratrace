@@ -1,268 +1,96 @@
 "use client";
 
 import React, { useState } from "react";
-import Link from "next/link";
-import {
-  BookOpen,
-  Terminal,
-  Copy,
-  Check,
-  Code2,
-  FileCode,
-  ShieldCheck,
-  Layers,
-  ArrowRight,
-  ExternalLink,
-  ChevronRight,
-  Info,
-} from "lucide-react";
 import { Navbar } from "@/components/layout/Navbar";
 import { PublicFooter } from "@/components/layout/PublicFooter";
+import { BookOpen, Check, Copy, ShieldCheck } from "lucide-react";
 
 export default function DocumentationPage() {
   const [copied, setCopied] = useState<string | null>(null);
+  async function copy(text: string, id: string) {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(id);
+      window.setTimeout(() => setCopied(null), 1800);
+    } catch {
+      setCopied(null);
+    }
+  }
 
-  const copyToClipboard = (text: string, id: string) => {
-    navigator.clipboard.writeText(text);
-    setCopied(id);
-    setTimeout(() => setCopied(null), 2000);
-  };
+  const Code = ({ id, value }: { id: string; value: string }) => (
+    <div className="rounded-xl border border-slate-800 bg-slate-950">
+      <div className="flex items-center justify-end border-b border-slate-800 px-3 py-2">
+        <button onClick={() => void copy(value, id)} className="inline-flex items-center gap-1.5 text-xs text-slate-300 hover:text-white">
+          {copied === id ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Copy className="h-3.5 w-3.5" />}
+          {copied === id ? "Copied" : "Copy"}
+        </button>
+      </div>
+      <pre className="overflow-x-auto whitespace-pre-wrap p-4 text-sm leading-6 text-slate-200">{value}</pre>
+    </div>
+  );
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#f8fafc] text-slate-900 font-sans selection:bg-red-500/20 selection:text-red-900">
+    <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900">
       <Navbar />
+      <main className="mx-auto w-full max-w-5xl flex-1 space-y-8 px-5 py-12">
+        <header className="rounded-3xl border border-slate-200 bg-white p-8 sm:p-12">
+          <div className="inline-flex items-center gap-2 rounded-full border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-700"><BookOpen className="h-4 w-4" /> Developer documentation</div>
+          <h1 className="mt-5 text-3xl sm:text-4xl font-black tracking-tight">AuraTrace SDK Integration</h1>
+          <p className="mt-4 max-w-3xl leading-7 text-slate-600">Integrate the SDK into an existing application. AuraTrace captures supported crashes and sends events to the backend for analysis, diagnosis, and controlled repair. This site documents the SDK; it is not a live monitoring console.</p>
+        </header>
 
-      <main className="flex-1 max-w-5xl w-full mx-auto px-4 sm:px-6 py-10 space-y-10">
-        {/* Header */}
-        <div className="rounded-3xl border border-slate-200 bg-white p-8 sm:p-12 shadow-xs">
-          <div className="inline-flex items-center gap-2 rounded-full border border-red-200 bg-red-50 px-3 py-1 text-xs font-bold text-red-700 font-heading mb-3">
-            <BookOpen className="h-3.5 w-3.5" />
-            Developer Documentation
-          </div>
-          <h1 className="text-3xl sm:text-4xl font-black text-slate-900 font-heading tracking-tight">
-            AuraTrace SDK Integration Guide
-          </h1>
-          <p className="text-xs sm:text-sm text-slate-600 mt-2 leading-relaxed max-w-2xl">
-            Install and configure the Python or Node.js SDK. Public documentation is available without an account; dashboard access requires sign-in.
-          </p>
-        </div>
+        <section id="python" className="rounded-2xl border border-slate-200 bg-white p-6 sm:p-8">
+          <div className="flex items-center gap-3"><span className="rounded-lg bg-blue-100 px-3 py-2 text-sm font-bold text-blue-900">Py</span><div><h2 className="text-xl font-bold">Python SDK</h2><p className="text-sm text-slate-500">Install and import at application startup</p></div></div>
+          <h3 className="mt-6 mb-2 text-sm font-bold">1. Install</h3>
+          <Code id="py-install" value="pip install auratrace" />
+          <h3 className="mt-6 mb-2 text-sm font-bold">2. Import the SDK</h3>
+          <Code id="py-setup" value={`import auratrace
 
-        {/* ======================================================== */}
-        {/* 1. PYTHON SDK GUIDE */}
-        {/* ======================================================== */}
-        <section id="python" className="rounded-3xl border border-slate-200 bg-white p-8 shadow-xs space-y-6">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-            <div className="flex items-center gap-3">
-              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-100 text-blue-800 text-xs font-bold font-mono">
-                Py
-              </span>
-              <div>
-                <h2 className="text-lg font-bold text-slate-900 font-heading">
-                  Python SDK Guide
-                </h2>
-                <p className="text-xs text-slate-500">Supports Python 3.9, 3.10, 3.11, 3.12, 3.14</p>
-              </div>
-            </div>
-            <span className="text-[11px] font-mono bg-slate-100 px-2.5 py-1 rounded-md text-slate-700">
-              v1.0.0
-            </span>
-          </div>
-
-          {/* Installation */}
-          <div className="space-y-2">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 font-heading">
-              1. Installation
-            </h3>
-            <div className="flex items-center justify-between rounded-xl bg-slate-950 p-3 text-xs font-mono text-slate-100">
-              <span>pip install auratrace</span>
-              <button
-                type="button"
-                onClick={() => copyToClipboard("pip install auratrace", "py-install")}
-                className="flex items-center gap-1 text-[11px] text-slate-400 hover:text-white"
-              >
-                {copied === "py-install" ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Copy className="h-3.5 w-3.5" />}
-              </button>
-            </div>
-          </div>
-
-          {/* Quickstart Code */}
-          <div className="space-y-2">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 font-heading">
-              2. Automatic Setup &amp; Initialization
-            </h3>
-            <div className="rounded-xl border border-slate-800 bg-slate-950 p-4 text-xs font-mono text-slate-300 overflow-x-auto">
-              <pre>{`import auratrace
-
-# Option A: Automatic Zero-Config Detection
-# Importing auratrace automatically installs sys.excepthook, detects runtime
-# metadata, and buffers crash telemetry in the background.
-
-# Option B: Explicit Configuration (or via AURATRACE_API_KEY environment variable)
-client = auratrace.init(
-    api_key="YOUR_PROJECT_API_KEY",
-    service_name="payment-service",
-    endpoint="http://localhost:8000"
-)
-
-# Optional manual telemetry dispatch
-auratrace.capture_message("Order processed", metadata={"order_id": "ord_101"})`}</pre>
-            </div>
-          </div>
+# Import the SDK early in application startup.
+# The SDK installs the automatic crash hooks supported by this version.
+# Set AURATRACE_API_KEY and AURATRACE_ENDPOINT in the process environment.`} />
+          <h3 className="mt-6 mb-2 text-sm font-bold">3. Configure the environment</h3>
+          <Code id="py-env" value={`AURATRACE_API_KEY=your_project_scoped_key
+AURATRACE_ENDPOINT=https://your-auratrace-backend`} />
         </section>
 
-        {/* ======================================================== */}
-        {/* 2. NODE.JS SDK GUIDE */}
-        {/* ======================================================== */}
-        <section id="nodejs" className="rounded-3xl border border-slate-200 bg-white p-8 shadow-xs space-y-6">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-            <div className="flex items-center gap-3">
-              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-100 text-emerald-800 text-xs font-bold font-mono">
-                JS
-              </span>
-              <div>
-                <h2 className="text-lg font-bold text-slate-900 font-heading">
-                  Node.js SDK Guide
-                </h2>
-                <p className="text-xs text-slate-500">Supports Node.js 18.x, 20.x, 22.x LTS</p>
-              </div>
-            </div>
-            <span className="text-[11px] font-mono bg-slate-100 px-2.5 py-1 rounded-md text-slate-700">
-              v2.0.0
-            </span>
-          </div>
+        <section id="nodejs" className="rounded-2xl border border-slate-200 bg-white p-6 sm:p-8">
+          <div className="flex items-center gap-3"><span className="rounded-lg bg-emerald-100 px-3 py-2 text-sm font-bold text-emerald-900">JS</span><div><h2 className="text-xl font-bold">Node.js SDK</h2><p className="text-sm text-slate-500">Import early in the application startup path</p></div></div>
+          <h3 className="mt-6 mb-2 text-sm font-bold">1. Install</h3>
+          <Code id="node-install" value="npm install @auratrace/node" />
+          <h3 className="mt-6 mb-2 text-sm font-bold">2. Import the SDK</h3>
+          <Code id="node-setup" value={`import "@auratrace/node";
 
-          {/* Installation */}
-          <div className="space-y-2">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 font-heading">
-              1. Installation
-            </h3>
-            <div className="flex items-center justify-between rounded-xl bg-slate-950 p-3 text-xs font-mono text-slate-100">
-              <span>npm install @auratrace/node</span>
-              <button
-                type="button"
-                onClick={() => copyToClipboard("npm install @auratrace/node", "node-install")}
-                className="flex items-center gap-1 text-[11px] text-slate-400 hover:text-white"
-              >
-                {copied === "node-install" ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Copy className="h-3.5 w-3.5" />}
-              </button>
-            </div>
-          </div>
-
-          {/* Quickstart Code */}
-          <div className="space-y-2">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 font-heading">
-              2. Automatic Setup &amp; Initialization
-            </h3>
-            <div className="rounded-xl border border-slate-800 bg-slate-950 p-4 text-xs font-mono text-slate-300 overflow-x-auto">
-              <pre>{`// Configure the endpoint and credentials for your AuraTrace deployment.
-// Importing the package installs crash hooks, but does not provision a
-// project or register a fresh installation automatically.
-import { init, captureMessage } from "@auratrace/node";
-
-const client = init({
-  apiKey: process.env.AURATRACE_API_KEY,
-  serviceName: "auth-service",
-  endpoint: process.env.AURATRACE_ENDPOINT ?? "http://localhost:8000"
-});
-
-// Optional manual telemetry dispatch
-captureMessage("User logged in", { userId: "usr_456" });`}</pre>
-            </div>
-          </div>
+// Import the SDK early so supported crash hooks are installed.
+// Set AURATRACE_API_KEY and AURATRACE_ENDPOINT in the process environment.`} />
+          <h3 className="mt-6 mb-2 text-sm font-bold">3. Configure the environment</h3>
+          <Code id="node-env" value={`AURATRACE_API_KEY=your_project_scoped_key
+AURATRACE_ENDPOINT=https://your-auratrace-backend`} />
         </section>
 
-        {/* ======================================================== */}
-        {/* 3. CONFIGURATION PARAMETERS */}
-        {/* ======================================================== */}
-        <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-xs space-y-4">
-          <div className="border-b border-slate-100 pb-4">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 font-heading block">
-              Reference
-            </span>
-            <h2 className="text-lg font-bold text-slate-900 font-heading">
-              SDK Configuration Parameters
-            </h2>
-          </div>
-
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead>
-                <tr className="border-b border-slate-100 text-slate-400 font-heading">
-                  <th className="pb-2 font-bold">Parameter</th>
-                  <th className="pb-2 font-bold">Type</th>
-                  <th className="pb-2 font-bold">Default</th>
-                  <th className="pb-2 font-bold">Description</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 text-slate-700 font-sans">
-                <tr>
-                  <td className="py-2.5 font-mono text-[11px] font-bold text-red-700">project_id / projectId</td>
-                  <td className="py-2.5 font-mono text-[11px]">string</td>
-                  <td className="py-2.5 font-mono text-[11px] text-slate-400">deployment-specific</td>
-                  <td className="py-2.5">Project partition identifier when required by the configured deployment</td>
-                </tr>
-                <tr>
-                  <td className="py-2.5 font-mono text-[11px] font-bold text-red-700">api_key / apiKey</td>
-                  <td className="py-2.5 font-mono text-[11px]">string</td>
-                  <td className="py-2.5 font-mono text-[11px] text-slate-400">required by current transport</td>
-                  <td className="py-2.5">Keep credentials in server-side environment variables. Do not expose master keys in browser code or public SDK bundles.</td>
-                </tr>
-                <tr>
-                  <td className="py-2.5 font-mono text-[11px] font-bold text-slate-900">service_name / serviceName</td>
-                  <td className="py-2.5 font-mono text-[11px]">string</td>
-                  <td className="py-2.5 font-mono text-[11px]">"default-service"</td>
-                  <td className="py-2.5">Identifier for the microservice application</td>
-                </tr>
-                <tr>
-                  <td className="py-2.5 font-mono text-[11px] font-bold text-slate-900">endpoint</td>
-                  <td className="py-2.5 font-mono text-[11px]">string</td>
-                  <td className="py-2.5 font-mono text-[11px]">"http://localhost:8000"</td>
-                  <td className="py-2.5">URL of the AuraTrace ingestion gateway</td>
-                </tr>
-                <tr>
-                  <td className="py-2.5 font-mono text-[11px] font-bold text-slate-900">environment</td>
-                  <td className="py-2.5 font-mono text-[11px]">string</td>
-                  <td className="py-2.5 font-mono text-[11px]">"production"</td>
-                  <td className="py-2.5">Runtime environment tag (e.g. dev, staging, prod)</td>
-                </tr>
-                <tr>
-                  <td className="py-2.5 font-mono text-[11px] font-bold text-slate-900">sample_rate / sampleRate</td>
-                  <td className="py-2.5 font-mono text-[11px]">number</td>
-                  <td className="py-2.5 font-mono text-[11px]">1.0</td>
-                  <td className="py-2.5">Telemetry metric sampling fraction (0.0 to 1.0)</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
+        <section className="rounded-2xl border border-slate-200 bg-white p-6 sm:p-8">
+          <h2 className="text-xl font-bold">What happens after a crash?</h2>
+          <ol className="mt-5 space-y-4">
+            {[
+              ["Capture and transport", "The SDK captures supported crash context and sends telemetry asynchronously to the configured backend."],
+              ["Queue and analyze", "The ingestion service authenticates the event and queues it for backend processing. The anomaly engine evaluates available signals."],
+              ["Diagnose", "The diagnostic service combines the stack trace and relevant metrics with similar historical fixes to propose a likely cause."],
+              ["Generate and test a patch", "The repair engine creates a candidate patch and runs configured safety checks and tests in an isolated environment."],
+              ["Apply and verify", "A fix is applied only through an authorized repository or deployment workflow. Health checks determine whether recovery succeeded."],
+            ].map(([title, text]) => <li key={title} className="flex gap-3"><span className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full bg-red-600" /><div><h3 className="font-semibold">{title}</h3><p className="mt-1 text-sm leading-6 text-slate-600">{text}</p></div></li>)}
+          </ol>
         </section>
 
-        {/* ======================================================== */}
-        {/* 4. DESIGN PRINCIPLES & GUARANTEES */}
-        {/* ======================================================== */}
-        <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-xs space-y-4">
-          <div className="border-b border-slate-100 pb-4">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 font-heading block">
-              Performance &amp; Safety
-            </span>
-            <h2 className="text-lg font-bold text-slate-900 font-heading">
-              Runtime Guarantees
-            </h2>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs text-slate-600">
-            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 space-y-1.5">
-              <h4 className="font-bold text-slate-900 font-heading">Sub-Millisecond Overhead</h4>
-              <p>Telemetry events are queued in an in-memory buffer and flushed asynchronously via worker threads. Application requests never block waiting on telemetry I/O.</p>
-            </div>
-
-            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 space-y-1.5">
-              <h4 className="font-bold text-slate-900 font-heading">Exit-Safe Crash Interception</h4>
-              <p>When an unhandled exception occurs, the SDK flushes the final crash payload before passing the exception to the runtime's default exit handler.</p>
-            </div>
-          </div>
+        <section className="rounded-2xl border border-amber-200 bg-amber-50 p-6">
+          <div className="flex items-start gap-3"><ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-amber-800" /><div><h2 className="font-bold text-amber-950">Security and important limitations</h2><ul className="mt-2 list-disc space-y-1 pl-5 text-sm leading-6 text-amber-950">
+            <li>Use a project-scoped credential. Never put master, LLM, or GitHub credentials inside the SDK or application bundle.</li>
+            <li>Importing the SDK does not provision a project or credential automatically unless a separate registration flow is implemented.</li>
+            <li>Telemetry delivery requires a valid credential and a reachable backend.</li>
+            <li>AI-generated patches must be treated as untrusted until validated. Automatic deployment requires explicit authorization and safe deployment controls.</li>
+            <li>Crash capture does not guarantee every error can be diagnosed or automatically repaired.</li>
+          </ul></div></div>
         </section>
       </main>
-
       <PublicFooter />
     </div>
   );
