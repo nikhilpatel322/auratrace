@@ -1,8 +1,19 @@
 # Environment Variables
 .env
 .env.*
+<<<<<<< HEAD
+=======
+.env*.local
+>>>>>>> 9f420d2609525d61c582cceb64279c1885f42862
 !.env.example
 .auratrace/
+
+# Trained Machine Learning Models
+models/*.pkl
+*.pkl
+*.joblib
+!models/.gitkeep
+!models/README.md
 
 # Python
 __pycache__/

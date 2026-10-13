@@ -1,111 +1,139 @@
-# AuraTrace System Architecture
-
-AuraTrace is an autonomous crash observability and self-healing platform engineered for multi-tenant software systems. It unifies automatic crash telemetry ingestion, ML-driven anomaly detection, pgvector RAG-assisted diagnosis, and L3 automated code remediation with post-deployment health verification and rollback guards.
-
----
+# 🏛️ AuraTrace — System Architecture & Data Flow
 
 ## 1. High-Level System Architecture
 
-```text
-                 AuraTrace Multi-Tenant Architecture
-                                  │
-         ┌────────────────────────┴────────────────────────┐
-         │                                                 │
-   Developer SDK                                     Web Dashboard
-         │                                                 │
-         ▼                                                 ▼
- Fast Ingestion Gateway ◄──────────────────────── Next.js 14 Frontend
- (FastAPI + JWT Auth)                             (Server Actions + WS)
-         │
-         ▼
-   Redis 7.2 Broker
- (Streams + Pub/Sub)
-         │
-         ▼
- ML Anomaly Engine (Worker)
- (Isolation Forest: 8 features)
-         │
-         ▼
- PostgreSQL 16 + pgvector
- (Partitioned Multi-Tenant DB)
-         │
-         ▼
- RAG AI Doctor (Worker)
- (BGE-small-en-v1.5 + Gemini)
-         │
-         ▼
- L3 Autonomous Repair Engine
- (Safety Gate + Sandbox + GitHub API)
-         │
- ┌───────┴───────┐
- ▼               ▼
-GitHub Branch   PR / CI Verification
-                 │
-                 ▼
-          Automated Merge / Deploy
-                 │
-                 ▼
-       Post-Deploy Monitoring
-          ┌──────┴──────┐
-          ▼             ▼
-       Healthy       Rollback PR
+```mermaid
+graph TB
+    A[Developer Application<br/>Python / Node.js] -->|Zero-Config SDK| B[Ingestion Gateway<br/>FastAPI :8000]
+    B -->|XADD| C[(Redis Streams)]
+    C -->|XREADGROUP| D[ML Anomaly Worker]
+    D -->|INSERT| E[(PostgreSQL 16<br/>+ pgvector)]
+    D -->|XADD| F[diagnose_stream]
+    F -->|XREADGROUP| G[RAG Diagnostic Worker]
+    G -->|Vector Similarity Search| E
+    G -->|Prompt + Context| H[Google Gemini LLM]
+    G -->|UPDATE| E
+    G -->|XADD| I[repair_stream]
+    I -->|XREADGROUP| J[Repair Worker]
+    J -->|GitHub REST API| K[GitHub Repo / PR]
+    J -->|UPDATE| E
+    E -->|REST API & WS| L[Next.js 14 Dashboard<br/>:3000]
+    B -->|Live WebSocket| L
 ```
 
 ---
 
-## 2. Core Subsystems
+## 2. Sequence Diagram — Autonomous Detection & Auto-Repair
 
-### 2.1 Developer SDKs (Python & Node.js)
-- Zero-boilerplate automatic crash and exception interception.
-- Contextual metadata extraction (OS, runtime version, git commit, host, process environment).
-- Non-blocking asynchronous batch queue with silent fallback on network failure.
-- Guarantees natural process crash exit semantics (`process.exit(1)`).
+```mermaid
+sequenceDiagram
+    autonumber
+    participant App as Monitored App
+    participant SDK as AuraTrace SDK
+    participant API as Ingestion Gateway
+    participant Redis as Redis Stream
+    participant ML as ML Worker
+    participant RAG as RAG Doctor
+    participant DB as PostgreSQL (pgvector)
+    participant Repair as Repair Engine
+    participant GH as GitHub API
+    participant UI as Next.js Dashboard
 
-### 2.2 Ingestion Gateway (`backend/ingestion_service`)
-- Project API key verification and tenant routing.
-- Asynchronous ingestion into Redis Stream (`telemetry_stream`).
-- WebSocket Real-time Hub with partitioned `ConnectionManager` (events scoped strictly to `project_id`).
-- REST APIs for project management, crash investigation, and repair management.
-
-### 2.3 ML Anomaly Detection Service (`backend/ml_anomaly_service`)
-- Sliding window buffer computing 8 operational telemetry features per service:
-  1. `error_count`
-  2. `request_count`
-  3. `error_rate`
-  4. `avg_latency_ms`
-  5. `max_latency_ms`
-  6. `p95_latency_ms`
-  7. `status_5xx_rate`
-  8. `unique_error_types`
-- Isolation Forest anomaly model evaluating streaming traffic in real-time.
-- Emits `ANOMALY_DETECTED` events to Redis Pub/Sub and records `incidents` in PostgreSQL.
-
-### 2.4 RAG AI Diagnostic Service (`backend/rag-diagnostic-service`)
-- 384-dimensional dense vector embeddings generated via `BAAI/bge-small-en-v1.5`.
-- pgvector HNSW cosine index retrieval prioritizes project-specific fixes and global verified fixes.
-- Multi-tenant tenant boundary enforcement: proprietary private fixes are never leaked across projects.
-- Gemini LLM synthesizes structured root cause analysis and a unified diff patch (`suggested_patch`).
-
-### 2.5 L3 Autonomous Repair Engine (`backend/repair_engine`)
-- **Safety Gate:** Restricts sensitive files (`.env`, `.pem`, `.ssh`), path traversal, and dangerous execution patterns (`rm -rf`, `os.system`).
-- **Mandatory Sandbox:** Creates an isolated temporary workspace, applies unified diff patch, and runs allowlisted test commands (`pytest`, `npm test`) with `shell=False`.
-- **GitHub Integration:** Creates fix branches (`auratrace/repair/...`), commits code changes, opens Pull Requests, and tracks CI status.
-- **Post-Deploy Telemetry Health Monitoring:** Compares pre-deploy baseline error rates against post-deploy telemetry.
-- **Rollback Guard:** On performance regression or bug recurrence, automatically generates a revert PR.
+    App->>SDK: Uncaught Exception / Crash
+    SDK->>SDK: Client-Side Secret Scrubbing
+    SDK->>API: POST /v1/ingest (X-API-Key)
+    API->>API: Prefix Lookup + bcrypt verify
+    API->>Redis: XADD telemetry_stream
+    API-->>SDK: 202 Accepted (event_id)
+    Redis->>ML: XREADGROUP telemetry_stream
+    ML->>DB: INSERT telemetry_events
+    ML->>ML: Extract 10-D Rolling Window Features
+    ML->>ML: Isolation Forest Anomaly Scoring
+    alt Anomaly Score > 0.5 or Crash
+        ML->>DB: INSERT incidents (status='detecting')
+        ML->>Redis: XADD diagnose_stream
+    end
+    Redis->>RAG: XREADGROUP diagnose_stream
+    RAG->>RAG: Generate 384-d Embedding (BGE)
+    RAG->>DB: pgvector <=> Cosine Similarity Query
+    DB-->>RAG: Top-5 Historical Similar Fixes
+    RAG->>RAG: Synthesize Grounded Prompt
+    RAG->>RAG: Gemini API (What Happened, Root Cause, Diff Patch)
+    RAG->>DB: UPDATE incidents (status='fix_ready', suggested_patch)
+    RAG->>Redis: XADD repair_stream
+    Redis->>Repair: XREADGROUP repair_stream
+    Repair->>Repair: Patch Validator (Forbidden Patterns Check)
+    Repair->>Repair: Sandbox Test (git clone + npm test / pytest)
+    Repair->>GH: Create Branch + Commit Patch + Open PR
+    GH-->>Repair: PR URL (#123)
+    Repair->>DB: UPDATE incidents (status='pr_created', pr_url)
+    alt Auto-Merge Enabled & CI Passes & Tests Passed
+        Repair->>GH: Squash & Merge PR
+        Repair->>DB: UPDATE incidents (status='merged')
+        Repair->>Repair: Launch 20-Min Post-Deploy Rollback Guard
+    end
+    DB->>UI: Real-Time Incident Stream Update
+```
 
 ---
 
-## 3. Data Flow Lifecycle
+## 3. Database Entity Relationship (ER) Diagram
 
-| Step | Component | Action | Isolation Scope |
-| :--- | :--- | :--- | :--- |
-| 1 | SDK | Catches uncaught exception, extracts trace & metadata | Project API Key |
-| 2 | Ingestion API | Authenticates API key, pushes to Redis stream | `project_id` |
-| 3 | ML Worker | Aggregates rolling window & scores anomaly | `(project_id, service_id)` |
-| 4 | DB | Persists new Incident | `project_id` |
-| 5 | RAG Worker | Vector search for top-3 similar historical fixes | `project_id` + `is_global` |
-| 6 | Gemini | Diagnoses root cause & generates unified diff patch | Incident scope |
-| 7 | Repair Engine | Safety Gate inspection $\to$ Sandbox test execution | Isolated Workspace |
-| 8 | GitHub Client | Creates branch $\to$ Commits patch $\to$ Opens PR | Project Repo & Token |
-| 9 | CI Gate | Polls GitHub check-runs until PASSED | Repository |
-| 10 | Monitoring | Observes post-deploy error rates for regression | `project_id` Window |
+```mermaid
+erDiagram
+    USERS ||--o{ PROJECTS : owns
+    PROJECTS ||--o{ TELEMETRY_EVENTS : receives
+    PROJECTS ||--o{ INCIDENTS : tracks
+    PROJECTS ||--o{ HISTORICAL_FIXES : stores
+    PROJECTS ||--o{ REPAIR_AUDIT : logs
+    INCIDENTS ||--o{ HISTORICAL_FIXES : produces
+    INCIDENTS ||--o{ REPAIR_AUDIT : audits
+
+    USERS {
+        uuid id PK
+        varchar email UK
+        varchar password_hash
+        varchar full_name
+        varchar role
+        timestamptz created_at
+    }
+
+    PROJECTS {
+        uuid id PK
+        varchar name
+        varchar slug UK
+        varchar api_key_hash UK
+        varchar api_key_prefix
+        boolean auto_repair_enabled
+        boolean auto_merge_enabled
+        varchar github_repo
+        text github_token_encrypted
+        timestamptz created_at
+    }
+
+    INCIDENTS {
+        uuid id PK
+        uuid project_id FK
+        varchar error_type
+        text error_message
+        text root_cause
+        text stack_trace
+        float anomaly_score
+        varchar severity
+        jsonb diagnosis
+        text suggested_patch
+        float fix_confidence
+        varchar pr_url
+        varchar status
+        timestamptz created_at
+    }
+
+    HISTORICAL_FIXES {
+        uuid id PK
+        uuid incident_id FK
+        varchar error_type
+        text fix_diff
+        vector_384 embedding
+        timestamptz created_at
+    }
+```

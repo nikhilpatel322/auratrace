@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 """
 Post-deployment telemetry health evaluation and automated rollback guard for AuraTrace L3.
 """
@@ -10,12 +11,18 @@ from typing import Any, Optional
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from backend.shared.database import TelemetryLog, Incident
+=======
+from __future__ import annotations
+
+import re
+>>>>>>> 9f420d2609525d61c582cceb64279c1885f42862
 
 
 def regression_detected(*, baseline_error_rate: float, current_error_rate: float, threshold: float) -> bool:
     """Return true when post-deploy error rate exceeds the configured baseline delta."""
     if baseline_error_rate < 0 or current_error_rate < 0:
         return False
+<<<<<<< HEAD
     return current_error_rate > (baseline_error_rate + max(threshold, 0.0))
 
 
@@ -92,3 +99,10 @@ async def check_incident_recurrence(
         return count > 0
     except Exception:
         return False
+=======
+    return current_error_rate > baseline_error_rate + max(threshold, 0.0)
+
+
+def validate_rollback_reason(reason: str) -> str:
+    return re.sub(r"[^a-zA-Z0-9 .,:;_()/-]", "", reason).strip()[:500]
+>>>>>>> 9f420d2609525d61c582cceb64279c1885f42862

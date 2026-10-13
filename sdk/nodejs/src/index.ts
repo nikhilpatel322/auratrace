@@ -1,4 +1,5 @@
 /**
+<<<<<<< HEAD
  * AuraTrace Node.js SDK — Zero-Boilerplate Automatic Crash Detection & Diagnostics
  */
 
@@ -80,3 +81,15 @@ export default {
   AuraTrace,
   AuraTraceClient,
 };
+=======
+ * AuraTrace Node.js SDK — public API.
+ */
+export {
+  AuraTraceClient,
+  init,
+  getClient,
+  captureException,
+  captureEvent,
+  InitOptions,
+} from './client';
+>>>>>>> 9f420d2609525d61c582cceb64279c1885f42862

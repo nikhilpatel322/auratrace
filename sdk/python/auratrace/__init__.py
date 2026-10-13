@@ -1,7 +1,18 @@
 """
+<<<<<<< HEAD
 AuraTrace Python SDK — Zero-Boilerplate Automatic Crash Detection & Diagnostics
-"""
+=======
+AuraTrace Python SDK — zero-config crash capture.
 
+Usage:
+    from auratrace import init
+    init(api_key="aura_live_...")
+>>>>>>> 9f420d2609525d61c582cceb64279c1885f42862
+"""
+from .client import AuraTraceClient, get_client, init
+from .client import capture_exception, capture_event
+
+<<<<<<< HEAD
 from typing import Optional
 
 from .client import (
@@ -98,9 +109,13 @@ __all__ = [
     "TraceClient",
     "Trace",
     "AutomaticBackendDetection",
+=======
+__version__ = "1.0.0"
+__all__ = [
+>>>>>>> 9f420d2609525d61c582cceb64279c1885f42862
     "init",
-    "capture_message",
     "capture_exception",
+<<<<<<< HEAD
     "diagnose",
     "flush",
     "HTTPTransport",
@@ -111,4 +126,9 @@ __all__ = [
     "run_sandbox_test",
     "install_exception_hook",
     "uninstall_exception_hook",
+=======
+    "capture_event",
+    "AuraTraceClient",
+    "get_client",
+>>>>>>> 9f420d2609525d61c582cceb64279c1885f42862
 ]

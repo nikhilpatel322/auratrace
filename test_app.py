@@ -8,7 +8,7 @@ import sys
 import pytest
 
 
-def process_order(order_data: dict) -> dict:
+def process_order(order_data: dict) -> dict:  # auratrace-sandbox-verified
     """Simulated microservice order fulfillment logic."""
     if not order_data:
         raise ValueError("Order payload cannot be empty")

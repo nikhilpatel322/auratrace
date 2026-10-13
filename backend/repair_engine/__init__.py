@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 """
 AuraTrace L3 Automated Repair Engine
 Autonomous patch inspection, sandbox verification, GitHub PR automation, CI gating, and rollback guard.
@@ -31,3 +32,6 @@ __all__ = [
     "generate_encryption_key",
     "mask_token",
 ]
+=======
+"""AuraTrace Autonomous Repair Engine & Auto-Merge Package."""
+>>>>>>> 9f420d2609525d61c582cceb64279c1885f42862
