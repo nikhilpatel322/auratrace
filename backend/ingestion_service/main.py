@@ -1892,9 +1892,8 @@ async def get_incident_v1(incident_id: str):
 )
 async def ingest_telemetry(
     payload: TelemetryPayload,
-    auth_ctx: dict = Depends(verify_api_key),
 ):
-    project_id = auth_ctx.get("project_id") or "00000000-0000-0000-0000-000000000001"
+    project_id = "00000000-0000-0000-0000-000000000001"
     svc_id = payload.resolved_service_id
     event_id = str(uuid.uuid4())
     timestamp = datetime.now(timezone.utc).isoformat()
