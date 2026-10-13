@@ -43,7 +43,7 @@ export default function DocumentationPage() {
             AuraTrace SDK Integration Guide
           </h1>
           <p className="text-xs sm:text-sm text-slate-600 mt-2 leading-relaxed max-w-2xl">
-            Complete setup instructions, zero-boilerplate runtime hooks, and configuration reference for instrumenting Python and Node.js applications.
+            Install and configure the Python or Node.js SDK. Public documentation is available without an account; dashboard access requires sign-in.
           </p>
         </div>
 
@@ -154,17 +154,15 @@ auratrace.capture_message("Order processed", metadata={"order_id": "ord_101"})`}
               2. Automatic Setup &amp; Initialization
             </h3>
             <div className="rounded-xl border border-slate-800 bg-slate-950 p-4 text-xs font-mono text-slate-300 overflow-x-auto">
-              <pre>{`// Option A: Zero-Boilerplate Import
-import "@auratrace/node";
-// Automatically registers uncaughtException and unhandledRejection hooks!
-
-// Option B: Explicit Configuration (or via AURATRACE_API_KEY environment variable)
-import { init, captureMessage, captureException } from "@auratrace/node";
+              <pre>{`// Configure the endpoint and credentials for your AuraTrace deployment.
+// Importing the package installs crash hooks, but does not provision a
+// project or register a fresh installation automatically.
+import { init, captureMessage } from "@auratrace/node";
 
 const client = init({
-  apiKey: "YOUR_PROJECT_API_KEY",
+  apiKey: process.env.AURATRACE_API_KEY,
   serviceName: "auth-service",
-  endpoint: "http://localhost:8000"
+  endpoint: process.env.AURATRACE_ENDPOINT ?? "http://localhost:8000"
 });
 
 // Optional manual telemetry dispatch
@@ -200,14 +198,14 @@ captureMessage("User logged in", { userId: "usr_456" });`}</pre>
                 <tr>
                   <td className="py-2.5 font-mono text-[11px] font-bold text-red-700">project_id / projectId</td>
                   <td className="py-2.5 font-mono text-[11px]">string</td>
-                  <td className="py-2.5 font-mono text-[11px] text-slate-400">required</td>
-                  <td className="py-2.5">UUID of the target AuraTrace project partition</td>
+                  <td className="py-2.5 font-mono text-[11px] text-slate-400">deployment-specific</td>
+                  <td className="py-2.5">Project partition identifier when required by the configured deployment</td>
                 </tr>
                 <tr>
                   <td className="py-2.5 font-mono text-[11px] font-bold text-red-700">api_key / apiKey</td>
                   <td className="py-2.5 font-mono text-[11px]">string</td>
-                  <td className="py-2.5 font-mono text-[11px] text-slate-400">required</td>
-                  <td className="py-2.5">16-character alphanumeric authorization key</td>
+                  <td className="py-2.5 font-mono text-[11px] text-slate-400">required by current transport</td>
+                  <td className="py-2.5">Keep credentials in server-side environment variables. Do not expose master keys in browser code or public SDK bundles.</td>
                 </tr>
                 <tr>
                   <td className="py-2.5 font-mono text-[11px] font-bold text-slate-900">service_name / serviceName</td>
