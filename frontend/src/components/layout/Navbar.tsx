@@ -102,6 +102,13 @@ export function Navbar() {
                 <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5" />
               </Link>
 
+              <Link
+                href="/login"
+                className="hidden sm:inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition"
+              >
+                Dashboard sign in
+              </Link>
+
               {/* Mobile Menu Toggle */}
               <div className="flex md:hidden">
                 <button
@@ -148,6 +155,13 @@ export function Navbar() {
               })}
 
               <div className="pt-2 border-t border-slate-100 flex flex-col gap-2">
+                <Link
+                  href="/login"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center justify-center rounded-xl bg-[#dc2626] px-3.5 py-2.5 text-xs font-bold text-white"
+                >
+                  Dashboard sign in
+                </Link>
                 <a
                   href="https://github.com/sunilsingh175/auratrace"
                   target="_blank"
