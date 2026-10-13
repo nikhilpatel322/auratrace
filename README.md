@@ -1,156 +1,111 @@
-# AuraTrace — Autonomous Crash Observability & Self-Healing Platform
+# AuraTrace — SDK-First Autonomous Self-Healing
 
-AuraTrace is an SDK-first crash observability and autonomous AI self-healing platform. The developer experience is deliberately minimal: install the SDK, import it once at application startup, and run your application normally.
+AuraTrace is a developer SDK that captures application crashes and sends diagnostic telemetry to the AuraTrace backend. The backend analyzes errors, retrieves relevant historical fixes, generates a candidate patch, validates it in an isolated environment, and uses an authorized repair workflow when the configured safety policy permits.
+
+The public website is documentation only. It does not need a live monitoring dashboard, live log stream, incident graphs, or manual monitoring controls.
+
+## How it works
 
 ```text
-Install AuraTrace SDK
-        ↓
-Run application
-        ↓
-AuraTrace detects crash
-        ↓
-AI diagnoses problem
-        ↓
-AuraTrace generates repair
-        ↓
-Repair is tested in sandbox
-        ↓
-GitHub PR & CI validate it
-        ↓
-Deployment monitored
-        ↓
-Rollback if regression
+Install SDK in an existing application
+              ↓
+SDK captures an unhandled crash
+              ↓
+Telemetry is sent securely to AuraTrace
+              ↓
+Backend queues and analyzes the event
+              ↓
+AI diagnoses the likely root cause
+              ↓
+Repair engine proposes a code patch
+              ↓
+Patch is tested in an isolated sandbox
+              ↓
+Authorized repair workflow applies or proposes the fix
+              ↓
+Health checks verify recovery
 ```
 
-The developer never writes manual telemetry calls, configures message brokers, manages vector databases, or triggers the repair engine manually.
+## SDK quick start
 
----
+### Python
 
-## 🚀 Quick Start
-
-### 1. Python Application
+Install the SDK:
 
 ```bash
 pip install auratrace
 ```
 
+Import AuraTrace at application startup:
+
 ```python
 import auratrace
 
-def main():
-    # AuraTrace automatically captures uncaught exceptions, extracts stack traces
-    # and metadata, and dispatches telemetry asynchronously.
-    risky_operation()
-
-if __name__ == "__main__":
-    main()
+# Importing the SDK installs its supported automatic crash-capture hooks.
+# Configure a project-scoped credential through the environment.
 ```
 
-### 2. Node.js Application
+Set the backend endpoint and project-scoped credential in the application's environment:
+
+```env
+AURATRACE_API_KEY=your_project_scoped_key
+AURATRACE_ENDPOINT=http://localhost:8000
+```
+
+### Node.js
+
+Install the SDK:
 
 ```bash
 npm install @auratrace/node
 ```
 
+Import it early in the application startup:
+
 ```typescript
 import "@auratrace/node";
-
-async function main() {
-  // Automatically catches unhandled exceptions & promise rejections,
-  // flushes crash telemetry, and exits safely.
-  await startService();
-}
-
-main();
 ```
 
-### Configuration
-The application only requires a project-scoped API key:
-```env
-AURATRACE_API_KEY=your_project_api_key
-AURATRACE_ENDPOINT=http://localhost:8000
-```
+Configure `AURATRACE_API_KEY` and `AURATRACE_ENDPOINT` in the process environment. Never embed privileged backend, LLM, or GitHub credentials in application code or the SDK package.
 
----
+> SDK import enables the capture hooks supported by the installed SDK version. Successful delivery still requires valid project-scoped credentials and a reachable, correctly configured backend. SDK capture alone does not guarantee that a fix will be generated or deployed.
 
-## ⚡ Autonomous Self-Healing Lifecycle
+## Backend components
 
-```text
-SDK Crash
-   ↓
-FastAPI Ingestion Gateway
-   ↓
-Redis Stream
-   ↓
-ML Anomaly Detection (Isolation Forest: 8 features)
-   ↓
-PostgreSQL Incident (Project-Scoped)
-   ↓
-pgvector RAG (384-dim dense embeddings + Top 3 matches)
-   ↓
-Gemini Structured Diagnosis & Patch Synthesis
-   ↓
-Autonomous L3 Repair Engine
-   ↓
-Safety Gate (Restricted paths & dangerous command inspection)
-   ↓
-Mandatory Sandbox (Isolated temp workspace + allowlisted test runner)
-   ↓
-GitHub Repair Branch & Pull Request
-   ↓
-CI Verification (wait_for_ci)
-   ↓
-Controlled Merge (Auto-Merge or Manual Review)
-   ↓
-Post-Deployment Health Monitoring
-   ┌─────────┴─────────┐
-   ▼                   ▼
-Healthy             Regression Detected
-                       ↓
-                    Automated Rollback PR
-```
+- **Ingestion gateway:** authenticates and queues SDK telemetry.
+- **Redis Streams:** decouples application event delivery from analysis.
+- **Anomaly engine:** evaluates error and performance signals.
+- **PostgreSQL + pgvector:** stores incidents and retrieves similar historical fixes.
+- **RAG diagnostics:** combines stack traces, metrics, and retrieved context to generate a diagnosis and candidate patch.
+- **Repair engine:** applies safety checks, runs tests in isolation, and uses an authorized GitHub/deployment workflow.
+- **Recovery verification:** checks health after a repair and supports rollback workflows where configured.
 
----
+## Frontend scope
 
-## 📚 Technical Documentation
+The frontend is a public information site containing:
+- AuraTrace overview and architecture.
+- Python and Node.js SDK installation and integration guides.
+- Explanation of crash capture, diagnosis, patch validation, and repair safety.
+- Security and project documentation.
 
-Comprehensive architectural and engineering documentation is available in the [`docs/`](docs/) directory:
+It is not intended to display live application telemetry or to require developers to operate a monitoring dashboard.
 
-- [System Architecture](docs/architecture.md) — Multi-tenant system design, services, and event pipelines.
-- [SDK Integration Guide](docs/sdk.md) — Python & Node.js SDK installation, hooks, and crash exit semantics.
-- [Machine Learning Engine](docs/ml.md) — 8-feature Isolation Forest detector vs. offline HDFS benchmark.
-- [RAG AI Diagnostics](docs/rag.md) — Dense vector embeddings, pgvector cosine search, and multi-tenant isolation.
-- [L3 Automated Repair](docs/l3-repair.md) — Safety Gate rules, mandatory sandbox testing, and rollback guards.
-- [Database & Migrations](docs/database.md) — Declarative SQL schema migrations and relational models.
-- [Security Architecture](docs/security.md) — Tenant isolation, token encryption, and sandbox isolation.
-- [2-Minute Demo Guide](docs/demo.md) — Step-by-step instructions for running the autonomous E2E demo.
+## Development and validation
 
----
-
-## 🧪 Running Tests & Validation
+Run the existing repository tests and production build before deploying changes:
 
 ```bash
-# Python SDK tests
 python -m pytest -s sdk/python/test_python_sdk.py
-
-# Node.js SDK tests
 cd sdk/nodejs && npm test
-
-# ML production model evaluation (unseen test split)
-python scripts/train/evaluate_production.py
-
-# L3 autonomous repair integration tests
-python -m pytest -s tests/integration/test_l3_repair.py
-
-# Frontend production build
 cd frontend && npm run build
 ```
 
----
+Run backend integration tests according to the environment and credentials configured for the deployment. A passing frontend build does not validate the complete crash-to-repair pipeline.
 
-## 🔒 Security
+## Security notes
 
-- **Project Scoping:** All telemetry, incidents, services, WebSocket alerts, and private RAG embeddings are strictly isolated by `project_id`.
-- **Credential Protection:** GitHub Personal Access Tokens are encrypted with AES-GCM at rest.
-- **Fail-Silent Design:** SDKs never block or crash the host application if the AuraTrace backend is unreachable.
-- **Sandbox Security:** Test commands in sandboxes run with `shell=False` and strict entrypoint allowlists.
+- Use project-scoped credentials; never ship a master key in an SDK.
+- Keep LLM and GitHub credentials on the backend.
+- Treat generated patches as untrusted until they pass safety checks and isolated tests.
+- Apply fixes only through explicitly authorized policies and deployment workflows.
+- Keep the host application running if telemetry delivery fails; the SDK should not block normal application execution.
