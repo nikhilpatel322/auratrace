@@ -87,9 +87,28 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
     const host = process.env.NEXT_PUBLIC_WS_HOST || window.location.hostname;
     const port = process.env.NEXT_PUBLIC_WS_PORT || "8000";
+    const token = typeof window !== "undefined" ? sessionStorage.getItem("trace_access_token_v1") : null;
+    const savedProjectId = typeof window !== "undefined" ? localStorage.getItem("auratrace_active_project_id_v1") : null;
+    const cachedKey = typeof window !== "undefined"
+      ? (savedProjectId ? (localStorage.getItem(`auratrace_key_${savedProjectId}`) || localStorage.getItem(`autotrace_key_${savedProjectId}`)) : null) ||
+        localStorage.getItem("auratrace_api_key")
+      : null;
+
+    // Do not attempt connection without credentials to prevent 403 Forbidden rejection loops
+    if (!token && !cachedKey) {
+      return;
+    }
+
+    const query = new URLSearchParams();
+    if (token) query.set("token", token);
+    if (cachedKey) query.set("api_key", cachedKey);
+    if (savedProjectId) query.set("project_id", savedProjectId);
+    const queryString = query.toString() ? `?${query.toString()}` : "";
+
     const wsUrl =
-      process.env.NEXT_PUBLIC_WS_URL ||
-      `${protocol}//${host}:${port}/ws/telemetry`;
+      process.env.NEXT_PUBLIC_WS_URL
+        ? `${process.env.NEXT_PUBLIC_WS_URL.split("?")[0]}${queryString}`
+        : `${protocol}//${host}:${port}/ws/telemetry${queryString}`;
 
     try {
       const ws = new WebSocket(wsUrl);
@@ -159,11 +178,16 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
         }
       };
 
-      ws.onclose = () => {
+      ws.onclose = (event: CloseEvent) => {
         setIsConnected(false);
         wsRef.current = null;
         if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current);
-        reconnectTimerRef.current = setTimeout(connectWebSocket, 4000);
+        // If rejected due to authentication/policy violation (WS 1008 or 4403), do not spam reconnect
+        if (event.code === 1008 || event.code === 4403) {
+          console.warn("[Trace] Telemetry WebSocket unauthorized. Pausing reconnect until authenticated.");
+          return;
+        }
+        reconnectTimerRef.current = setTimeout(connectWebSocket, 5000);
       };
 
       ws.onerror = () => {
@@ -175,7 +199,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     } catch (e) {
       wsRef.current = null;
       if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current);
-      reconnectTimerRef.current = setTimeout(connectWebSocket, 4000);
+      reconnectTimerRef.current = setTimeout(connectWebSocket, 5000);
     }
   }, [addNotification]);
 

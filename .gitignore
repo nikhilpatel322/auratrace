@@ -1,7 +1,8 @@
 # Environment Variables
 .env
-.env*.local
+.env.*
 !.env.example
+.auratrace/
 
 # Python
 __pycache__/
@@ -32,6 +33,8 @@ env/
 .pytest_cache/
 .coverage
 htmlcov/
+*.pkl
+
 
 # Node.js & Next.js
 node_modules/
@@ -60,6 +63,10 @@ Desktop.ini
 *-HP-*
 *.orig
 *.bak
+backups/
+*.dump
+*.sql.gz
+
 
 # Archives & Packages
 *.tgz
@@ -81,3 +88,6 @@ scripts/datasets/**/anomaly_label.csv
 *.parquet
 *.h5
 
+
+# AuraTrace runtime rollback artifacts
+.auratrace/rollbacks/*.json
