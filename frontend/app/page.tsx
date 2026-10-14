@@ -1,261 +1,96 @@
-'use client';
-
-import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import {
-  Activity,
-  AlertTriangle,
-  CheckCircle2,
-  Zap,
-  ArrowRight,
-  Inbox,
-  Terminal,
-  Settings,
-} from 'lucide-react';
-import { api, Incident, storage } from '@/lib/api';
+import { ArrowRight, Bot, Bug, CheckCircle2, Code2, GitBranch, PackageCheck, ShieldCheck, Workflow } from 'lucide-react';
+
+const features = [
+  { icon: Bug, title: 'Capture application failures', text: 'The SDK collects exception details and stack traces from your application and sends telemetry to the configured AuraTrace backend.' },
+  { icon: Bot, title: 'Diagnose in the backend', text: 'Backend workers analyze the event, compare it with relevant historical fixes, and prepare an AI-assisted diagnosis.' },
+  { icon: ShieldCheck, title: 'Validate before recovery', text: 'A repair is not automatically safe just because an LLM suggested it. The configured repair mechanism must authorize, test, and validate changes before applying them.' },
+];
+
+const steps = [
+  ['01', 'Install the SDK', 'Add the package to your Python or Node.js application.'],
+  ['02', 'Configure the client', 'Set the backend endpoint and project credentials using environment variables.'],
+  ['03', 'Run your application', 'The SDK reports supported errors without requiring a monitoring dashboard.'],
+  ['04', 'Backend handles recovery', 'Detection, diagnosis, fix generation, validation, and authorized repair run server-side.'],
+];
 
 export default function Home() {
-  const [health, setHealth] = useState<any>(null);
-  const [incidents, setIncidents] = useState<Incident[]>([]);
-  const [projectId, setProjectId] = useState<string | null>(null);
-  const [projectName, setProjectName] = useState('');
-  const [creating, setCreating] = useState(false);
-
-  useEffect(() => {
-    api.health().then(setHealth).catch(console.error);
-    const pid = storage.getProjectId();
-    setProjectId(pid);
-    if (pid) fetchIncidents(pid);
-  }, []);
-
-  const fetchIncidents = async (pid: string) => {
-    try {
-      const data = await api.listIncidents(pid);
-      setIncidents(data.incidents);
-    } catch {}
-  };
-
-  const createProject = async () => {
-    if (!projectName.trim()) return;
-    setCreating(true);
-    try {
-      const project = await api.createProject(projectName, 'dev@example.com');
-      storage.setProjectId(project.id);
-      if (project.api_key) storage.setApiKey(project.api_key);
-      setProjectId(project.id);
-      await fetchIncidents(project.id);
-    } finally {
-      setCreating(false);
-    }
-  };
-
-  const criticalCount = incidents.filter((i) => i.severity === 'critical').length;
-  const activeCount = incidents.filter((i) => i.status !== 'resolved').length;
-  const fixedCount = incidents.filter((i) =>
-    ['merged', 'resolved', 'auto_merged'].includes(i.status)
-  ).length;
-
   return (
-    <div>
-      <header className="mb-8 flex items-start justify-between flex-wrap gap-4">
+    <div className="space-y-16">
+      <section className="relative overflow-hidden rounded-3xl bg-gray-950 px-7 py-12 text-white md:px-12 md:py-16">
+        <div className="absolute -right-20 -top-24 h-72 w-72 rounded-full bg-red-600/20 blur-3xl" />
+        <div className="relative max-w-3xl">
+          <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-xs font-medium text-gray-200">
+            <span className="h-2 w-2 rounded-full bg-red-400" />
+            SDK-first AI self-healing
+          </div>
+          <h1 className="text-4xl font-semibold leading-tight tracking-tight md:text-6xl">
+            Recover from application failures with <span className="text-red-400">AuraTrace.</span>
+          </h1>
+          <p className="mt-6 max-w-2xl text-base leading-7 text-gray-300 md:text-lg">
+            Integrate a small SDK into your application. AuraTrace sends crash telemetry to the backend, where detection, AI diagnosis, fix validation, and authorized repair are processed.
+          </p>
+          <div className="mt-8 flex flex-wrap gap-3">
+            <Link href="/python" className="inline-flex items-center gap-2 rounded-lg bg-red-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-red-700">
+              Integrate Python SDK <ArrowRight className="h-4 w-4" />
+            </Link>
+            <Link href="/nodejs" className="inline-flex items-center gap-2 rounded-lg border border-white/20 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/10">
+              Integrate Node.js SDK
+            </Link>
+          </div>
+          <p className="mt-5 text-xs text-gray-400">No live monitoring dashboard is required. Runtime processing happens in the backend.</p>
+        </div>
+      </section>
+
+      <section>
+        <div className="max-w-2xl">
+          <p className="text-sm font-semibold uppercase tracking-widest text-red-600">What AuraTrace does</p>
+          <h2 className="mt-2 text-3xl font-semibold tracking-tight">Your app runs. The backend does the heavy work.</h2>
+          <p className="mt-3 leading-7 text-gray-600">The frontend is documentation for developers. It does not display live logs, incident streams, monitoring graphs, or real-time anomaly feeds.</p>
+        </div>
+        <div className="mt-7 grid gap-5 md:grid-cols-3">
+          {features.map(({ icon: Icon, title, text }) => (
+            <article key={title} className="rounded-2xl border border-gray-200 bg-white p-6">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-red-50 text-red-600"><Icon className="h-5 w-5" /></div>
+              <h3 className="mt-5 text-lg font-semibold">{title}</h3>
+              <p className="mt-2 text-sm leading-6 text-gray-600">{text}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="grid gap-10 lg:grid-cols-[0.8fr_1.2fr]">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Dashboard</h1>
-          <p className="text-sm text-gray-500 mt-1">
-            Real-time observability and autonomous repair
-          </p>
+          <p className="text-sm font-semibold uppercase tracking-widest text-red-600">Integration path</p>
+          <h2 className="mt-2 text-3xl font-semibold tracking-tight">Four steps to connect your app</h2>
+          <p className="mt-3 leading-7 text-gray-600">Choose the SDK for your runtime, configure it, and let the backend process telemetry and repair workflows.</p>
+          <Link href="/how-it-works" className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-red-600 hover:text-red-700">Read the architecture <ArrowRight className="h-4 w-4" /></Link>
         </div>
-        {projectId && (
-          <div className="flex items-center gap-2">
-            <Link
-              href={`/projects/${projectId}/setup`}
-              className="btn-primary flex items-center gap-2 text-sm"
-            >
-              <Terminal className="w-4 h-4" />
-              Setup Guide
-            </Link>
-            <Link
-              href={`/projects/${projectId}/settings`}
-              className="btn-secondary flex items-center gap-2 text-sm"
-            >
-              <Settings className="w-4 h-4" />
-              Auto-Repair Settings
-            </Link>
-          </div>
-        )}
-      </header>
-
-      {!projectId && (
-        <div className="card p-6 max-w-lg mb-6">
-          <h2 className="text-base font-semibold mb-1">Create your first project</h2>
-          <p className="text-sm text-gray-500 mb-4">
-            Get an API key and start capturing crashes in seconds.
-          </p>
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={projectName}
-              onChange={(e) => setProjectName(e.target.value)}
-              placeholder="my-app"
-              className="input"
-              onKeyDown={(e) => e.key === 'Enter' && createProject()}
-            />
-            <button onClick={createProject} disabled={creating} className="btn-primary whitespace-nowrap">
-              {creating ? 'Creating...' : 'Create'}
-            </button>
-          </div>
-        </div>
-      )}
-
-      {projectId && (
-        <>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            <StatCard
-              label="API Status"
-              value={health?.status === 'ok' ? 'Online' : 'Checking'}
-              tone={health?.status === 'ok' ? 'success' : 'warning'}
-              icon={<Activity className="w-4 h-4" />}
-            />
-            <StatCard
-              label="Critical"
-              value={criticalCount}
-              tone={criticalCount > 0 ? 'danger' : 'success'}
-              icon={<AlertTriangle className="w-4 h-4" />}
-            />
-            <StatCard
-              label="Active"
-              value={activeCount}
-              tone="warning"
-              icon={<Zap className="w-4 h-4" />}
-            />
-            <StatCard
-              label="Auto-Fixed"
-              value={fixedCount}
-              tone="success"
-              icon={<CheckCircle2 className="w-4 h-4" />}
-            />
-          </div>
-
-          <div className="card">
-            <div className="flex justify-between items-center px-6 py-4 border-b border-gray-100">
-              <h2 className="text-base font-semibold">Recent Incidents</h2>
-              <Link
-                href="/incidents"
-                className="text-sm text-red-600 hover:text-red-700 flex items-center gap-1 font-medium"
-              >
-                View all <ArrowRight className="w-3.5 h-3.5" />
-              </Link>
+        <div className="space-y-3">
+          {steps.map(([number, title, text]) => (
+            <div key={number} className="flex gap-4 rounded-xl border border-gray-200 bg-white p-4">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gray-100 text-sm font-semibold text-gray-700">{number}</span>
+              <div><h3 className="font-semibold">{title}</h3><p className="mt-1 text-sm leading-6 text-gray-600">{text}</p></div>
             </div>
+          ))}
+        </div>
+      </section>
 
-            {incidents.length === 0 ? (
-              <div className="text-center py-16">
-                <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-3">
-                  <Inbox className="w-5 h-5 text-gray-400" />
-                </div>
-                <p className="text-sm text-gray-500">No incidents yet</p>
-                <p className="text-xs text-gray-400 mt-1">
-                  Send a crash via SDK or API to see it here
-                </p>
-              </div>
-            ) : (
-              <div className="divide-y divide-gray-100">
-                {incidents.slice(0, 5).map((inc) => (
-                  <IncidentRow key={inc.id} incident={inc} />
-                ))}
-              </div>
-            )}
+      <section className="rounded-2xl border border-gray-200 bg-white p-6 md:p-8">
+        <div className="flex items-start gap-4">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gray-100"><PackageCheck className="h-5 w-5" /></div>
+          <div className="flex-1">
+            <h2 className="text-xl font-semibold">Choose your SDK</h2>
+            <p className="mt-2 text-sm leading-6 text-gray-600">Use the runtime documentation for exact package commands, configuration, and code examples. Verify package names and supported initialization options against the SDK version in your repository before production use.</p>
+            <div className="mt-5 flex flex-wrap gap-3">
+              <Link href="/python" className="inline-flex items-center gap-2 rounded-lg border border-gray-200 px-4 py-2.5 text-sm font-semibold hover:border-red-300 hover:text-red-600"><Code2 className="h-4 w-4" /> Python guide</Link>
+              <Link href="/nodejs" className="inline-flex items-center gap-2 rounded-lg border border-gray-200 px-4 py-2.5 text-sm font-semibold hover:border-red-300 hover:text-red-600"><GitBranch className="h-4 w-4" /> Node.js guide</Link>
+              <Link href="/how-it-works" className="inline-flex items-center gap-2 rounded-lg border border-gray-200 px-4 py-2.5 text-sm font-semibold hover:border-red-300 hover:text-red-600"><Workflow className="h-4 w-4" /> Backend workflow</Link>
+            </div>
           </div>
-        </>
-      )}
-    </div>
-  );
-}
-
-function StatCard({
-  label,
-  value,
-  tone,
-  icon,
-}: {
-  label: string;
-  value: string | number;
-  tone: 'success' | 'warning' | 'danger';
-  icon: React.ReactNode;
-}) {
-  const colors = {
-    success: 'text-green-600 bg-green-50',
-    warning: 'text-amber-600 bg-amber-50',
-    danger: 'text-red-600 bg-red-50',
-  };
-  return (
-    <div className="card p-5">
-      <div className="flex items-center justify-between mb-3">
-        <span className="text-sm text-gray-500">{label}</span>
-        <div className={`w-7 h-7 rounded-md flex items-center justify-center ${colors[tone]}`}>
-          {icon}
+          <CheckCircle2 className="hidden h-5 w-5 text-green-600 sm:block" />
         </div>
-      </div>
-      <p className="text-2xl font-semibold tracking-tight">{value}</p>
+      </section>
     </div>
-  );
-}
-
-export function IncidentRow({ incident }: { incident: Incident }) {
-  const severityStyles: Record<string, string> = {
-    critical: 'bg-red-50 text-red-700 border-red-200',
-    high: 'bg-orange-50 text-orange-700 border-orange-200',
-    medium: 'bg-amber-50 text-amber-700 border-amber-200',
-    low: 'bg-gray-50 text-gray-700 border-gray-200',
-  };
-
-  return (
-    <Link
-      href={`/incidents/${incident.id}`}
-      className="flex items-center justify-between px-6 py-4 hover:bg-gray-50 transition"
-    >
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 mb-1">
-          <span className="font-medium text-sm truncate">{incident.error_type}</span>
-          <span
-            className={`text-xs px-2 py-0.5 rounded-full border font-medium uppercase tracking-wider ${
-              severityStyles[incident.severity] || severityStyles.low
-            }`}
-          >
-            {incident.severity}
-          </span>
-        </div>
-        <p className="text-sm text-gray-500 truncate">
-          {incident.service_name} · {incident.error_message?.slice(0, 80)}
-        </p>
-      </div>
-      <div className="text-right ml-4 flex-shrink-0">
-        <StatusBadge status={incident.status} />
-        <p className="text-xs text-gray-400 mt-1">
-          {new Date(incident.last_seen).toLocaleString()}
-        </p>
-      </div>
-    </Link>
-  );
-}
-
-export function StatusBadge({ status }: { status: string }) {
-  const map: Record<string, string> = {
-    new: 'bg-gray-100 text-gray-700',
-    detecting: 'bg-amber-100 text-amber-700',
-    diagnosing: 'bg-blue-100 text-blue-700',
-    fix_ready: 'bg-purple-100 text-purple-700',
-    pr_created: 'bg-indigo-100 text-indigo-700',
-    merged: 'bg-green-100 text-green-700',
-    auto_merged: 'bg-green-100 text-green-700',
-    resolved: 'bg-green-100 text-green-700',
-    reverted: 'bg-red-100 text-red-700',
-  };
-  return (
-    <span
-      className={`inline-block text-xs px-2 py-0.5 rounded-md font-medium ${
-        map[status] || 'bg-gray-100 text-gray-700'
-      }`}
-    >
-      {status.replace(/_/g, ' ')}
-    </span>
   );
 }
